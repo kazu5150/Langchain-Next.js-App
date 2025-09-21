@@ -1,6 +1,6 @@
-# LangChain × Next.js チャットデモ
+# LangChain × Next.js AI Chat & Image Analysis
 
-OpenAI GPTとLangChainを使用したリアルタイムチャットアプリケーションです。Next.jsフロントエンドとVercel Functionsを使用したサーバーレス構成になっています。
+OpenAI GPT とLangChainを使用したAIチャットアプリケーションです。テキストチャットに加えて、OpenAI Vision APIを活用した画像解析機能も搭載しています。Next.jsフロントエンドとVercel Functionsを使用したサーバーレス構成になっています。
 
 ## 🌐 ライブデモ
 
@@ -8,12 +8,23 @@ OpenAI GPTとLangChainを使用したリアルタイムチャットアプリケ�
 
 ## 🚀 機能
 
+### 💬 テキストチャット
 - リアルタイムチャット機能
 - LangChainによるAI応答生成
+- 日本語対応
+
+### 🖼️ 画像解析（NEW!）
+- **ドラッグ&ドロップ**: 画像を直接ドラッグして簡単アップロード
+- **OpenAI Vision API**: GPT-4o-miniによる高精度画像解析
+- **構造化出力**: 画像の内容を体系的に分析
+- **カスタムプロンプト**: 解析内容をユーザーが指定可能
+- **対応形式**: JPG、PNG、GIF
+
+### 🛠️ 技術仕様
 - TypeScript対応
 - レスポンシブデザイン
-- 日本語対応
 - サーバーレス環境での動作
+- Base64画像エンコーディング
 
 ## 🛠 技術スタック
 
@@ -25,8 +36,9 @@ OpenAI GPTとLangChainを使用したリアルタイムチャットアプリケ�
 ### バックエンド
 - **Vercel Functions** - サーバーレス関数
 - **LangChain** - AI/LLMオーケストレーション
-- **OpenAI API** - GPT-4o-mini
+- **OpenAI API** - GPT-4o-mini（テキスト + Vision）
 - **Python** - API関数の実装
+- **Base64エンコーディング** - 画像データ処理
 
 ### インフラ
 - **Vercel** - ホスティング・デプロイメント
@@ -38,12 +50,13 @@ OpenAI GPTとLangChainを使用したリアルタイムチャットアプリケ�
 langchain-next-demo/
 ├── frontend/           # Next.js アプリケーション
 │   ├── app/
-│   │   ├── page.tsx   # メインチャットページ
+│   │   ├── page.tsx   # メインチャット＋画像解析ページ
 │   │   ├── layout.tsx # レイアウトコンポーネント
 │   │   └── api.d.ts   # 型定義
 │   ├── api/           # Vercel Functions
-│   │   ├── chat.py    # チャットAPI
-│   │   ├── health.py  # ヘルスチェックAPI
+│   │   ├── chat.py         # テキストチャットAPI
+│   │   ├── analyze-image.py # 画像解析API（NEW!）
+│   │   ├── health.py       # ヘルスチェックAPI
 │   │   └── requirements.txt
 │   ├── package.json
 │   └── tsconfig.json
@@ -147,7 +160,7 @@ npm run dev
 ```
 
 ### POST /api/chat
-チャット機能のエンドポイント
+テキストチャット機能のエンドポイント
 
 **リクエスト:**
 ```json
@@ -162,6 +175,32 @@ npm run dev
   "reply": "こんにちは！何かお手伝いできることはありますか？"
 }
 ```
+
+### POST /api/analyze-image（NEW!）
+画像解析機能のエンドポイント
+
+**リクエスト:**
+```json
+{
+  "image": "base64_encoded_image_data",
+  "prompt": "この画像の内容を詳しく分析してください。"
+}
+```
+
+**レスポンス:**
+```json
+{
+  "analysis": "構造化された画像解析結果...",
+  "status": "success"
+}
+```
+
+**解析結果の構造:**
+- 画像の概要
+- 主要な要素・オブジェクト
+- 色彩・構成
+- 注目すべき詳細
+- 推測される文脈・用途
 
 ## 🔄 開発コマンド
 
@@ -190,14 +229,22 @@ python main.py   # FastAPIサーバー起動
 ```mermaid
 graph TD
     A[ユーザー] --> B[Next.js Frontend]
-    B --> C[Vercel Functions]
-    C --> D[LangChain]
-    D --> E[OpenAI API]
-    E --> D
-    D --> C
-    C --> B
+    B --> C{入力タイプ}
+    C -->|テキスト| D[/api/chat]
+    C -->|画像| E[/api/analyze-image]
+    D --> F[LangChain + GPT-4o-mini]
+    E --> G[OpenAI Vision API]
+    F --> H[テキスト応答]
+    G --> I[画像解析結果]
+    H --> B
+    I --> B
     B --> A
 ```
+
+### 🔄 データフロー
+
+1. **テキストチャット**: ユーザー入力 → `/api/chat` → LangChain → OpenAI GPT-4o-mini → 応答
+2. **画像解析**: 画像アップロード → Base64エンコード → `/api/analyze-image` → OpenAI Vision → 構造化解析結果
 
 ## 📊 パフォーマンス
 
@@ -244,11 +291,39 @@ graph TD
 - 仮想環境が有効化されているか確認
 - `pip install -r requirements.txt` を再実行
 
+## 🎯 使用方法
+
+### テキストチャット
+1. メッセージを入力欄に入力
+2. 「送信」ボタンをクリックまたはEnterキー
+3. AIからの応答を確認
+
+### 画像解析
+1. **画像選択**:
+   - ドラッグ&ドロップエリアに画像をドロップ
+   - または、エリアをクリックしてファイル選択
+2. **カスタム指示**（オプション）:
+   - 入力欄に解析の指示を入力
+   - 例: "この写真の建築様式について教えて"
+3. **解析実行**: 「画像解析」ボタンをクリック
+4. **結果確認**: 構造化された解析結果を確認
+
+### 対応画像形式
+- **JPG/JPEG**: 最も一般的な写真形式
+- **PNG**: 透明背景対応
+- **GIF**: アニメーション画像（静止画として解析）
+
 ## 🚀 今後の改善予定
 
-- [ ] チャット履歴の保存機能
-- [ ] ユーザー認証機能
-- [ ] 複数のAIモデル対応
-- [ ] リアルタイム通信（WebSocket）
-- [ ] マークダウン対応
-- [ ] ファイルアップロード機能
+### v2.0 予定機能
+- [ ] **チャット履歴の保存**: ブラウザローカルストレージ対応
+- [ ] **複数画像解析**: 一度に複数の画像を比較分析
+- [ ] **画像とテキストの組み合わせ**: 画像を参照した追加質問
+- [ ] **解析結果のエクスポート**: JSON/PDF形式でのダウンロード
+
+### v3.0 予定機能
+- [ ] **ユーザー認証機能**: アカウント管理
+- [ ] **リアルタイム通信**: WebSocketによるライブチャット
+- [ ] **複数のAIモデル対応**: Claude、Gemini等の選択
+- [ ] **マークダウン対応**: リッチテキスト表示
+- [ ] **音声入力**: ボイスチャット機能
