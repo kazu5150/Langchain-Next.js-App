@@ -13,10 +13,23 @@ load_dotenv()
 
 app = FastAPI(title="LangChain FastAPI Chat", version="1.0.0")
 
-# CORS（開発中は * でOK。公開時はフロントのドメインに限定してください）
+# CORS設定（開発・本番両対応）
+allowed_origins = [
+    "http://localhost:3000",  # 開発環境
+    "https://localhost:3000",  # HTTPS開発環境
+]
+
+# 本番環境のVercel URLを環境変数から取得
+vercel_url = os.getenv("VERCEL_URL")
+if vercel_url:
+    allowed_origins.extend([
+        f"https://{vercel_url}",
+        f"https://*.vercel.app"
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # ←ここを正しく
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
